@@ -1,12 +1,94 @@
 @import "tailwindcss";
 
 @theme {
-  --color-background: #050505;
-  --color-foreground: #ffffff;
+  /* Colors */
+  --color-midnight-ink: #000000;
+  --color-fog: #8c8c8c;
+  --color-cloud-cover: #ecebe7;
+  --color-canvas-white: #ffffff;
+  --color-warm-linen: #f9f7f3;
+  --color-steel-gaze: #a2a1a1;
+  --color-carbon-text: #333333;
+
+  /* Typography */
+  --font-messina-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-letterform: var(--font-pt-serif), ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+
+  /* Typography — Scale */
+  --text-body: 14px;
+  --leading-body: 1.43;
+  --tracking-body: -0.01em;
+  --text-button: 17px;
+  --leading-button: 1.41;
+  --tracking-button: -0.01em;
+  --text-subheading: 20px;
+  --leading-subheading: 1.4;
+  --tracking-subheading: -0.01em;
+  --text-heading-sm: 24px;
+  --leading-heading-sm: 1.29;
+  --tracking-heading-sm: -0.01em;
+  --text-heading: 34px;
+  --leading-heading: 1.33;
+  --tracking-heading: -0.01em;
+  --text-heading-lg: 50px;
+  --leading-heading-lg: 1.6;
+  --tracking-heading-lg: -0.01em;
+  --text-display: 72px;
+  --leading-display: 1.71;
+  --tracking-display: -0.01em;
+
+  /* Spacing */
+  --spacing-4: 4px;
+  --spacing-8: 8px;
+  --spacing-12: 12px;
+  --spacing-16: 16px;
+  --spacing-20: 20px;
+  --spacing-24: 24px;
+  --spacing-32: 32px;
+  --spacing-40: 40px;
+  --spacing-44: 44px;
+  --spacing-48: 48px;
+
+  /* Border Radius */
+  --radius-md: 3.4px;
+  --radius-lg: 8px;
+  --radius-2xl: 20px;
+  --radius-full: 100px;
 }
 
-body {
-  background-color: var(--color-background);
-  color: var(--color-foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer base {
+  body {
+    background-color: var(--color-canvas-white);
+    color: var(--color-midnight-ink);
+    font-family: var(--font-messina-sans);
+  }
+}
+
+/* 3D Isometric Utilities */
+.stadium-container {
+  perspective: 1200px;
+}
+
+.isometric-view {
+  transform: rotateX(55deg) rotateZ(-40deg) translateZ(-50px);
+  transform-style: preserve-3d;
+  box-shadow: 20px 20px 50px rgba(0,0,0,0.1);
+  background-color: var(--color-warm-linen);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-cloud-cover);
+}
+
+.seat-3d {
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.2s;
+  transform-style: preserve-3d;
+}
+
+.seat-3d:hover {
+  transform: translateZ(10px) scale(1.1);
+  box-shadow: -5px 5px 10px rgba(0,0,0,0.1);
+}
+
+.stadium-stage {
+  transform: translateZ(5px);
+  box-shadow: -2px 2px 5px rgba(0,0,0,0.05);
 }

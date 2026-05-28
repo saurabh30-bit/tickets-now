@@ -3,17 +3,17 @@
 import React, { memo } from 'react';
 
 const Seat = memo(({ id, status, onClick }) => {
-  // Map new status codes to Tailwind colors
+  // Monochrome palette matching Accept&Proceed
   const colorMap = {
-    AVAILABLE: "bg-green-500 hover:bg-green-400 cursor-pointer",
-    LOCKED: "bg-yellow-500 cursor-not-allowed",
-    BOOKED: "bg-red-500 cursor-not-allowed",
+    AVAILABLE: "bg-[var(--color-cloud-cover)] border border-[var(--color-midnight-ink)] cursor-pointer",
+    LOCKED: "bg-[var(--color-fog)] cursor-not-allowed border border-[var(--color-midnight-ink)]",
+    BOOKED: "bg-[var(--color-midnight-ink)] cursor-not-allowed",
   };
 
   return (
     <div
       onClick={() => status === 'AVAILABLE' && onClick(id)}
-      className={`w-3 h-3 rounded-sm transition-colors duration-150 ${colorMap[status]}`}
+      className={`w-3 h-3 rounded-sm transition-colors duration-150 seat-3d ${colorMap[status]}`}
       title={`Seat ${id} - ${status}`}
     ></div>
   );

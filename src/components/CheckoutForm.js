@@ -1,60 +1,96 @@
-import { useState } from 'react';
+"use client";
+
+import React, { useState, useEffect } from 'react';
 
 export default function CheckoutForm({ seatId, onSuccess, onCancel }) {
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(300);
 
-  const handlePayNow = () => {
-    setIsLoading(true);
-    setTimeout(() => { setIsLoading(false); onSuccess(seatId); }, 2000);
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          onCancel();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [onCancel]);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setTimeout(() => {
+      onSuccess(seatId);
+    }, 2000);
   };
 
-  return (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 backdrop-blur-2xl">
-      <div className="bg-[#0a0a0a]/90 backdrop-blur-3xl border border-gray-800 p-10 rounded-3xl shadow-[0_0_80px_rgba(255,115,0,0.15)] max-w-md w-full relative">
-        <button 
-          onClick={onCancel} 
-          className="absolute top-6 right-6 text-gray-600 hover:text-white transition-colors bg-gray-900 w-8 h-8 rounded-full flex items-center justify-center"
-        >
-          ✕
-        </button>
+  const minutes = Math.floor(timeLeft / 60);
+  const seconds = timeLeft % 60;
 
-        <h2 className="text-2xl font-black text-white mb-8 tracking-tight">Secure Checkout</h2>
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[var(--color-midnight-ink)]/10 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-[var(--color-canvas-white)] w-full max-w-md rounded-[8px] border border-[var(--color-midnight-ink)] shadow-2xl p-8 transform animate-in zoom-in-95 duration-300">
         
-        <div className="space-y-5 mb-10">
+        <div className="flex justify-between items-start mb-8">
           <div>
-            <label className="block text-xs font-bold text-gray-500 tracking-widest uppercase mb-2">Cardholder Name</label>
-            <input type="text" placeholder="ALEXANDER DOE" className="w-full bg-black/50 border border-gray-800 text-white p-4 rounded-xl focus:outline-none focus:border-orange-500 transition-colors shadow-inner" />
+            <h2 className="text-[34px] font-[family-name:var(--font-letterform)] text-[var(--color-midnight-ink)] leading-[1.0] mb-2">Checkout</h2>
+            <p className="text-[14px] text-[var(--color-fog)]">Acquiring Piece No. {seatId}</p>
           </div>
-          <div>
-            <label className="block text-xs font-bold text-gray-500 tracking-widest uppercase mb-2">Card Number</label>
-            <div className="relative">
-              <input type="text" placeholder="0000 0000 0000 0000" className="w-full bg-black/50 border border-gray-800 text-white p-4 pl-12 rounded-xl focus:outline-none focus:border-orange-500 transition-colors shadow-inner font-mono" />
-              <svg className="w-6 h-6 absolute left-4 top-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
-            </div>
-          </div>
-          <div className="flex gap-5">
-            <div className="flex-1">
-              <label className="block text-xs font-bold text-gray-500 tracking-widest uppercase mb-2">Expiry</label>
-              <input type="text" placeholder="MM/YY" className="w-full bg-black/50 border border-gray-800 text-white p-4 rounded-xl focus:outline-none focus:border-orange-500 transition-colors shadow-inner font-mono text-center" />
-            </div>
-            <div className="flex-1">
-              <label className="block text-xs font-bold text-gray-500 tracking-widest uppercase mb-2">CVC</label>
-              <input type="text" placeholder="•••" className="w-full bg-black/50 border border-gray-800 text-white p-4 rounded-xl focus:outline-none focus:border-orange-500 transition-colors shadow-inner font-mono text-center" />
-            </div>
+          <div className="bg-[var(--color-warm-linen)] border border-[var(--color-steel-gaze)] rounded-[3.4px] px-3 py-1 text-right">
+            <p className="text-[10px] text-[var(--color-fog)] uppercase tracking-widest font-bold">Lock Expires</p>
+            <p className="text-[17px] text-[var(--color-midnight-ink)] font-mono">{minutes}:{seconds.toString().padStart(2, '0')}</p>
           </div>
         </div>
 
-        <button 
-          onClick={handlePayNow}
-          disabled={isLoading}
-          className="w-full py-5 rounded-xl font-black text-white bg-orange-600 hover:bg-orange-500 transition-all shadow-[0_0_20px_rgba(255,115,0,0.4)] disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center h-16 tracking-widest"
-        >
-          {isLoading ? (
-            <div className="w-6 h-6 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
-          ) : (
-            "PAY $99.00 NOW"
-          )}
-        </button>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-[10px] font-bold text-[var(--color-midnight-ink)] uppercase tracking-widest mb-2 ml-4">Full Name</label>
+              <input 
+                type="text" 
+                required
+                className="w-full bg-[rgba(0,0,0,0.05)] border border-[var(--color-midnight-ink)] rounded-[100px_0_0_100px] py-[8px] pl-[20px] text-[var(--color-carbon-text)] text-[14px] focus:outline-none focus:bg-[var(--color-canvas-white)] transition-colors"
+                placeholder="Jane Doe"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-[10px] font-bold text-[var(--color-midnight-ink)] uppercase tracking-widest mb-2 ml-4">Card Information</label>
+              <input 
+                type="text" 
+                required
+                className="w-full bg-[rgba(0,0,0,0.05)] border border-[var(--color-midnight-ink)] rounded-[100px_0_0_100px] py-[8px] pl-[20px] text-[var(--color-carbon-text)] text-[14px] focus:outline-none focus:bg-[var(--color-canvas-white)] transition-colors"
+                placeholder="0000 0000 0000 0000"
+              />
+            </div>
+          </div>
+
+          <div className="pt-4 flex gap-4">
+            <button 
+              type="button"
+              onClick={onCancel}
+              disabled={loading}
+              className="w-1/3 bg-transparent border-t border-[var(--color-midnight-ink)] text-[var(--color-midnight-ink)] font-normal text-[14px] py-[12px] hover:text-[var(--color-fog)] disabled:opacity-50 transition-colors"
+            >
+              Cancel
+            </button>
+            <button 
+              type="submit"
+              disabled={loading}
+              className="w-2/3 bg-[var(--color-cloud-cover)] border border-[var(--color-midnight-ink)] text-[var(--color-midnight-ink)] font-normal text-[17px] py-[12px] rounded-[20px] hover:bg-[var(--color-warm-linen)] disabled:opacity-50 transition-colors flex justify-center items-center"
+            >
+              {loading ? (
+                <div className="w-5 h-5 border-2 border-[var(--color-midnight-ink)] border-t-transparent rounded-full animate-spin"></div>
+              ) : (
+                "Complete Transaction"
+              )}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
