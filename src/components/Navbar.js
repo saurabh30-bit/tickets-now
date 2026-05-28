@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 export default function Navbar() {
   return (
     <nav className="fixed top-0 w-full z-40 bg-black/50 backdrop-blur-md border-b border-gray-800">
@@ -10,7 +12,10 @@ export default function Navbar() {
             <div className="ml-10 flex items-baseline space-x-8">
               <a href="#" className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors">Events</a>
               <a href="#" className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors">Pricing</a>
-              <a href="#" className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors">About Us</a>
+              {/* Secret link to Admin Panel for hackathon demo */}
+              <Link href="/admin" className="text-red-500 hover:text-red-400 px-3 py-2 rounded-md text-sm font-bold transition-colors">
+                Admin Panel
+              </Link>
             </div>
           </div>
           <div>
