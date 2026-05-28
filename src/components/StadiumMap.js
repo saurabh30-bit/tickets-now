@@ -12,7 +12,7 @@ export default function StadiumMap() {
   const [selectedSeat, setSelectedSeat] = useState(null);
   const [showCheckout, setShowCheckout] = useState(false);
 
-  // 1. Fetch real data from Supabase on load
+  // 1. Fetch real data and subscribe to realtime changes
   useEffect(() => {
     async function fetchSeats() {
       const { data, error } = await supabase
@@ -20,58 +20,117 @@ export default function StadiumMap() {
         .select('id, status')
         .order('id', { ascending: true });
 
-      if (error) {
-        console.error("Error fetching seats:", error);
-      } else if (data && data.length > 0) {
+      if (!error && data && data.length > 0) {
         setSeats(data);
       } else {
-        // Fallback for UI if DB is empty
         setSeats(Array.from({ length: 5000 }, (_, i) => ({ id: i + 1, status: 'AVAILABLE' })));
       }
       setLoading(false);
     }
     fetchSeats();
+
+    // 4. Realtime updates
+    const channel = supabase
+      .channel('seats')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'seats'
+      }, (payload) => {
+        // payload.new contains the updated row
+        setSeats((prevSeats) => {
+          const newSeats = [...prevSeats];
+          const seatIndex = newSeats.findIndex(s => s.id === payload.new.id);
+          if (seatIndex !== -1) {
+            newSeats[seatIndex] = { ...newSeats[seatIndex], status: payload.new.status };
+          }
+          return newSeats;
+        });
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
-  const handleSeatClick = useCallback((id) => {
-    setSeats((prevSeats) => {
-      const seat = prevSeats.find(s => s.id === id);
-      if (seat && seat.status === 'AVAILABLE') {
-        setSelectedSeat(id);
-      }
-      return prevSeats;
-    });
-  }, []);
+  // 2. Seat click handler (lock seat atomically via client)
+  const handleSeatClick = useCallback(async (id) => {
+    // Check Auth
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      alert("Please log in first to select a seat.");
+      return;
+    }
 
-  const handleProceedToCheckout = () => setShowCheckout(true);
-  const handleCancelReservation = () => { setSelectedSeat(null); setShowCheckout(false); };
+    const seat = seats.find(s => s.id === id);
+    if (seat && seat.status === 'AVAILABLE') {
+      // Optimistically select it so modal pops up instantly
+      setSelectedSeat(id);
+    }
+  }, [seats]);
 
-  // 2. Ping our new API to actually lock the seat
+  const handleProceedToCheckout = async () => {
+    // Actually lock it in the DB when they click "Checkout" in the modal
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    // Execute atomic lock query
+    const { data, error } = await supabase
+      .from('seats')
+      .update({
+        status: 'LOCKED',
+        locked_at: new Date().toISOString(),
+        session_id: user.id
+      })
+      .eq('id', selectedSeat)
+      .eq('status', 'AVAILABLE')
+      .select();
+
+    if (error || !data || data.length === 0) {
+      alert("Seat Taken! Someone beat you to it.");
+      setSelectedSeat(null);
+      return;
+    }
+
+    setShowCheckout(true);
+  };
+
+  const handleCancelReservation = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    // If they cancel, try to release the lock if they own it
+    if (user && selectedSeat) {
+      await supabase
+        .from('seats')
+        .update({ status: 'AVAILABLE', session_id: null, locked_at: null })
+        .eq('id', selectedSeat)
+        .eq('session_id', user.id);
+    }
+
+    setSelectedSeat(null);
+    setShowCheckout(false);
+  };
+
+  // 3. Confirm booking
   const handlePaymentSuccess = async (id) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
     try {
-      const response = await fetch('/api/reserve', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ seatId: id })
-      });
+      const { error } = await supabase
+        .from('seats')
+        .update({
+          status: 'BOOKED'
+        })
+        .eq('id', id)
+        .eq('session_id', user.id);
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        alert(result.error || "Someone beat you to it!");
-        setSelectedSeat(null);
-        setShowCheckout(false);
-        // Refresh seats to show it's taken
+      if (error) {
+        alert("Payment succeeded but booking failed to confirm in database.");
         return;
       }
 
-      // Success! Update local state
-      setSeats((prevSeats) => {
-        const newSeats = [...prevSeats];
-        const seatIndex = newSeats.findIndex(s => s.id === id);
-        if (seatIndex !== -1) newSeats[seatIndex] = { ...newSeats[seatIndex], status: 'SOLD' };
-        return newSeats;
-      });
       setSelectedSeat(null);
       setShowCheckout(false);
       alert(`Payment successful! You officially own Seat #${id}.`);

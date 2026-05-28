@@ -2,14 +2,12 @@
 
 import React, { memo } from 'react';
 
-// Using React.memo is CRUCIAL here. It prevents the other 4,999 seats from
-// re-rendering when only one seat's status changes.
 const Seat = memo(({ id, status, onClick }) => {
-  // Map status to Tailwind colors
+  // Map new status codes to Tailwind colors
   const colorMap = {
     AVAILABLE: "bg-green-500 hover:bg-green-400 cursor-pointer",
-    RESERVED: "bg-yellow-500 cursor-not-allowed",
-    SOLD: "bg-red-500 cursor-not-allowed",
+    LOCKED: "bg-yellow-500 cursor-not-allowed",
+    BOOKED: "bg-red-500 cursor-not-allowed",
   };
 
   return (
