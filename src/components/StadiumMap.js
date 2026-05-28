@@ -2,11 +2,12 @@
 
 import React, { useState, useCallback } from 'react';
 import Seat from './Seat';
+import SeatModal from './SeatModal';
+import CheckoutForm from './CheckoutForm';
 
 const TOTAL_SEATS = 5000;
 
 export default function StadiumMap() {
-  // Initialize 5,000 seats as AVAILABLE
   const [seats, setSeats] = useState(() => 
     Array.from({ length: TOTAL_SEATS }, (_, i) => ({
       id: i + 1,
@@ -14,29 +15,44 @@ export default function StadiumMap() {
     }))
   );
 
-  // useCallback ensures the function reference doesn't change on every render,
-  // which is required for React.memo in the Seat component to work properly!
+  const [selectedSeat, setSelectedSeat] = useState(null);
+  const [showCheckout, setShowCheckout] = useState(false);
+
   const handleSeatClick = useCallback((id) => {
     setSeats((prevSeats) => {
-      // Simulate locking the seat (optimistic UI update before calling Role 2's API)
-      const newSeats = [...prevSeats];
-      const seatIndex = newSeats.findIndex(s => s.id === id);
-      
-      if (newSeats[seatIndex].status === 'AVAILABLE') {
-        newSeats[seatIndex] = { ...newSeats[seatIndex], status: 'RESERVED' };
+      const seat = prevSeats.find(s => s.id === id);
+      if (seat && seat.status === 'AVAILABLE') {
+        setSelectedSeat(id);
       }
-      return newSeats;
+      return prevSeats;
     });
   }, []);
 
+  const handleProceedToCheckout = () => {
+    setShowCheckout(true);
+  };
+
+  const handleCancelReservation = () => {
+    setSelectedSeat(null);
+    setShowCheckout(false);
+  };
+
+  const handlePaymentSuccess = (id) => {
+    setSeats((prevSeats) => {
+      const newSeats = [...prevSeats];
+      const seatIndex = newSeats.findIndex(s => s.id === id);
+      if (seatIndex !== -1) {
+        newSeats[seatIndex] = { ...newSeats[seatIndex], status: 'SOLD' };
+      }
+      return newSeats;
+    });
+    setSelectedSeat(null);
+    setShowCheckout(false);
+    alert(`Payment successful! You officially own Seat #${id}.`);
+  };
+
   return (
-    <div className="w-full flex justify-center">
-      {/* 
-        Using CSS Grid with 100 columns. 
-        5000 seats / 100 cols = 50 rows.
-        This handles the layout natively in the browser's paint engine, 
-        making it extremely fast!
-      */}
+    <div className="w-full flex justify-center relative">
       <div 
         className="grid gap-[2px]" 
         style={{ gridTemplateColumns: 'repeat(100, minmax(0, 1fr))' }}
@@ -50,6 +66,22 @@ export default function StadiumMap() {
           />
         ))}
       </div>
+
+      {selectedSeat && !showCheckout && (
+        <SeatModal 
+          seatId={selectedSeat} 
+          onCheckout={handleProceedToCheckout} 
+          onCancel={handleCancelReservation} 
+        />
+      )}
+
+      {showCheckout && selectedSeat && (
+        <CheckoutForm 
+          seatId={selectedSeat}
+          onSuccess={handlePaymentSuccess}
+          onCancel={handleCancelReservation}
+        />
+      )}
     </div>
   );
 }
