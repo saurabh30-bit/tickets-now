@@ -12,6 +12,10 @@ export default function StadiumMap() {
   const [selectedSeat, setSelectedSeat] = useState(null);
   const [showCheckout, setShowCheckout] = useState(false);
 
+  // Kinetic 3D State
+  const [rotation, setRotation] = useState({ x: 55, y: -40 });
+  const [shadow, setShadow] = useState({ x: 20, y: 20 });
+
   useEffect(() => {
     async function fetchSeats() {
       const { data, error } = await supabase
@@ -128,6 +132,33 @@ export default function StadiumMap() {
     }
   };
 
+  // Kinetic Mouse Tracking Handlers
+  const handleMouseMove = (e) => {
+    if (typeof window === 'undefined') return;
+    
+    // Normalize mouse position from -1 to 1 based on screen size
+    const x = (e.clientX / window.innerWidth) * 2 - 1;
+    const y = (e.clientY / window.innerHeight) * 2 - 1;
+    
+    // Adjust maximum rotation spread
+    setRotation({
+      x: 55 - (y * 12), 
+      y: -40 + (x * 15)
+    });
+    
+    // Create an opposite, elongated shadow to simulate a moving spotlight
+    setShadow({
+      x: 20 - (x * 40),
+      y: 20 - (y * 40)
+    });
+  };
+
+  const handleMouseLeave = () => {
+    // Reset to neutral position
+    setRotation({ x: 55, y: -40 });
+    setShadow({ x: 20, y: 20 });
+  };
+
   const renderSection = (startIndex, count, cols, title, price) => {
     const sectionSeats = seats.slice(startIndex, startIndex + count);
     return (
@@ -147,11 +178,21 @@ export default function StadiumMap() {
   }
 
   return (
-    <div className="w-full flex flex-col items-center relative pt-20 pb-40">
+    <div 
+      className="w-full flex flex-col items-center relative pt-20 pb-40 overflow-hidden"
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+    >
       
       <div className="stadium-container w-full flex justify-center">
-        {/* ISOMETRIC TILT WRAPPER */}
-        <div className="isometric-view p-16 flex flex-col gap-12 items-center">
+        {/* KINETIC ISOMETRIC TILT WRAPPER */}
+        <div 
+          className="isometric-view p-16 flex flex-col gap-12 items-center"
+          style={{
+            transform: `rotateX(${rotation.x}deg) rotateZ(${rotation.y}deg) translateZ(-50px)`,
+            boxShadow: `${shadow.x}px ${shadow.y}px 80px rgba(0,0,0,0.15)`
+          }}
+        >
           
           {renderSection(3500, 1500, 75, "General Admission", "49")}
           

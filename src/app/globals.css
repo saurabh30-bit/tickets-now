@@ -66,21 +66,15 @@
 
 /* 3D Isometric Utilities */
 .stadium-container {
-  perspective: 1200px;
-}
-
-@keyframes float-and-rotate {
-  0% { transform: rotateX(55deg) rotateZ(-40deg) translateZ(-50px); box-shadow: 20px 20px 50px rgba(0,0,0,0.1); }
-  50% { transform: rotateX(57deg) rotateZ(-38deg) translateZ(-20px); box-shadow: 30px 30px 60px rgba(0,0,0,0.05); }
-  100% { transform: rotateX(55deg) rotateZ(-40deg) translateZ(-50px); box-shadow: 20px 20px 50px rgba(0,0,0,0.1); }
+  perspective: 2000px;
 }
 
 .isometric-view {
-  animation: float-and-rotate 8s ease-in-out infinite;
   transform-style: preserve-3d;
   background-color: var(--color-warm-linen);
   border-radius: var(--radius-lg);
   border: 1px solid var(--color-cloud-cover);
+  transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.15s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .seat-3d {
