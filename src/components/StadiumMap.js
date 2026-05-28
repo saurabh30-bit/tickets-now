@@ -1,20 +1,126 @@
 "use client";
 
-import React, { useState, useCallback, useEffect } from 'react';
-import Seat from './Seat';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { Canvas, useFrame } from '@react-three/fiber';
+import { OrbitControls, Environment, ContactShadows } from '@react-three/drei';
+import * as THREE from 'three';
+import { supabase } from '@/lib/supabase';
 import SeatModal from './SeatModal';
 import CheckoutForm from './CheckoutForm';
-import { supabase } from '@/lib/supabase';
+
+const SEAT_COUNT = 5000;
+const ROWS = 50;
+const SEATS_PER_ROW = 100;
+
+// Color Palette from Accept&Proceed
+const COLOR_AVAILABLE = new THREE.Color('#ecebe7'); // Cloud Cover
+const COLOR_LOCKED = new THREE.Color('#8c8c8c');    // Fog
+const COLOR_BOOKED = new THREE.Color('#000000');    // Midnight Ink
+const COLOR_HOVER = new THREE.Color('#a2a1a1');     // Steel Gaze
+
+const tempObject = new THREE.Object3D();
+const tempColor = new THREE.Color();
+
+const InstancedStadium = ({ seats, onSeatClick }) => {
+  const meshRef = useRef();
+  const [hovered, setHovered] = useState(null);
+
+  // Compute Layout once
+  const positions = useMemo(() => {
+    const pos = [];
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < SEATS_PER_ROW; c++) {
+        // Amphitheater math
+        const radius = 30 + r * 1.5;
+        const angle = (Math.PI * 0.8 * (c / SEATS_PER_ROW)) - (Math.PI * 0.4);
+        const x = Math.sin(angle) * radius;
+        const z = Math.cos(angle) * radius;
+        const y = r * 1.2;
+        
+        // Make seats look at the center stage
+        tempObject.position.set(x, y, z);
+        tempObject.lookAt(0, 0, 0);
+        tempObject.updateMatrix();
+        pos.push(tempObject.matrix.clone());
+      }
+    }
+    return pos;
+  }, []);
+
+  // Update matrices and colors
+  useEffect(() => {
+    if (!meshRef.current) return;
+    
+    // Set initial matrices
+    positions.forEach((matrix, i) => {
+      meshRef.current.setMatrixAt(i, matrix);
+    });
+    meshRef.current.instanceMatrix.needsUpdate = true;
+  }, [positions]);
+
+  useFrame(() => {
+    if (!meshRef.current || seats.length === 0) return;
+
+    // Update colors on every frame in case of hover or state change
+    for (let i = 0; i < SEAT_COUNT; i++) {
+      const seatState = seats[i]?.status || 'AVAILABLE';
+      
+      if (i === hovered && seatState === 'AVAILABLE') {
+        tempColor.copy(COLOR_HOVER);
+      } else if (seatState === 'BOOKED') {
+        tempColor.copy(COLOR_BOOKED);
+      } else if (seatState === 'LOCKED') {
+        tempColor.copy(COLOR_LOCKED);
+      } else {
+        tempColor.copy(COLOR_AVAILABLE);
+      }
+      
+      meshRef.current.setColorAt(i, tempColor);
+    }
+    meshRef.current.instanceColor.needsUpdate = true;
+  });
+
+  const handlePointerMove = (e) => {
+    e.stopPropagation();
+    if (e.instanceId !== undefined) {
+      setHovered(e.instanceId);
+    }
+  };
+
+  const handlePointerOut = () => {
+    setHovered(null);
+  };
+
+  const handleClick = (e) => {
+    e.stopPropagation();
+    if (e.instanceId !== undefined) {
+      onSeatClick(e.instanceId + 1); // seat IDs are 1-indexed in DB
+    }
+  };
+
+  return (
+    <instancedMesh
+      ref={meshRef}
+      args={[null, null, SEAT_COUNT]}
+      onPointerMove={handlePointerMove}
+      onPointerOut={handlePointerOut}
+      onClick={handleClick}
+    >
+      <boxGeometry args={[0.8, 0.8, 0.8]} />
+      <meshStandardMaterial 
+        roughness={0.2}
+        metalness={0.1}
+        toneMapped={false} 
+      />
+    </instancedMesh>
+  );
+};
 
 export default function StadiumMap() {
   const [seats, setSeats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedSeat, setSelectedSeat] = useState(null);
   const [showCheckout, setShowCheckout] = useState(false);
-
-  // Kinetic 3D State
-  const [rotation, setRotation] = useState({ x: 55, y: -40 });
-  const [shadow, setShadow] = useState({ x: 20, y: 20 });
 
   useEffect(() => {
     async function fetchSeats() {
@@ -132,81 +238,42 @@ export default function StadiumMap() {
     }
   };
 
-  // Kinetic Mouse Tracking Handlers
-  const handleMouseMove = (e) => {
-    if (typeof window === 'undefined') return;
-    
-    // Normalize mouse position from -1 to 1 based on screen size
-    const x = (e.clientX / window.innerWidth) * 2 - 1;
-    const y = (e.clientY / window.innerHeight) * 2 - 1;
-    
-    // Adjust maximum rotation spread
-    setRotation({
-      x: 55 - (y * 12), 
-      y: -40 + (x * 15)
-    });
-    
-    // Create an opposite, elongated shadow to simulate a moving spotlight
-    setShadow({
-      x: 20 - (x * 40),
-      y: 20 - (y * 40)
-    });
-  };
-
-  const handleMouseLeave = () => {
-    // Reset to neutral position
-    setRotation({ x: 55, y: -40 });
-    setShadow({ x: 20, y: 20 });
-  };
-
-  const renderSection = (startIndex, count, cols, title, price) => {
-    const sectionSeats = seats.slice(startIndex, startIndex + count);
-    return (
-      <div className="flex flex-col items-center">
-        <h3 className="text-[var(--color-fog)] font-bold uppercase tracking-[0.2em] text-[10px] mb-2 font-[family-name:var(--font-messina-sans)]">{title} — ${price}</h3>
-        <div className="grid gap-[4px]" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
-          {sectionSeats.map((seat) => (
-            <Seat key={seat.id} id={seat.id} status={seat.status} onClick={handleSeatClick} />
-          ))}
-        </div>
-      </div>
-    );
-  };
-
   if (loading) {
-    return <div className="text-[var(--color-midnight-ink)] text-xl font-[family-name:var(--font-letterform)] p-20 animate-pulse">Loading stadium...</div>;
+    return <div className="text-[var(--color-midnight-ink)] text-xl font-[family-name:var(--font-letterform)] p-20 animate-pulse">Loading 3D Engine...</div>;
   }
 
   return (
-    <div 
-      className="w-full flex flex-col items-center relative pt-20 pb-40 overflow-hidden"
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-    >
+    <div className="w-full h-[800px] flex flex-col items-center relative z-0">
       
-      <div className="stadium-container w-full flex justify-center">
-        {/* KINETIC ISOMETRIC TILT WRAPPER */}
-        <div 
-          className="isometric-view p-16 flex flex-col gap-12 items-center"
-          style={{
-            transform: `rotateX(${rotation.x}deg) rotateZ(${rotation.y}deg) translateZ(-50px)`,
-            boxShadow: `${shadow.x}px ${shadow.y}px 80px rgba(0,0,0,0.15)`
-          }}
-        >
+      <div className="w-full h-full cursor-grab active:cursor-grabbing border-y border-[var(--color-cloud-cover)]">
+        <Canvas camera={{ position: [0, 80, -100], fov: 50 }}>
+          <color attach="background" args={['#ffffff']} />
+          <ambientLight intensity={0.5} />
+          <directionalLight position={[50, 100, -50]} intensity={1.5} castShadow />
           
-          {renderSection(3500, 1500, 75, "General Admission", "49")}
+          <InstancedStadium seats={seats} onSeatClick={handleSeatClick} />
           
-          <div className="flex justify-between w-full max-w-[1200px] gap-12">
-            <div className="flex-1 flex justify-end">{renderSection(0, 1250, 25, "Left Wing", "129")}</div>
-            <div className="flex-none flex items-end">{renderSection(2500, 1000, 40, "VIP Floor", "299")}</div>
-            <div className="flex-1 flex justify-start">{renderSection(1250, 1250, 25, "Right Wing", "129")}</div>
-          </div>
-          
-          <div className="w-[400px] h-[80px] bg-[var(--color-canvas-white)] border border-[var(--color-midnight-ink)] stadium-stage mt-8 flex items-center justify-center">
-             <span className="text-[var(--color-midnight-ink)] font-[family-name:var(--font-letterform)] tracking-[0.3em] text-sm uppercase">Stage</span>
-          </div>
-          
-        </div>
+          {/* Stage Platform */}
+          <mesh position={[0, -2, 0]} receiveShadow>
+            <cylinderGeometry args={[15, 15, 2, 32]} />
+            <meshStandardMaterial color="#ecebe7" roughness={0.1} />
+          </mesh>
+
+          <ContactShadows position={[0, -3, 0]} opacity={0.4} scale={150} blur={2} far={100} />
+          <OrbitControls 
+            enablePan={false} 
+            maxPolarAngle={Math.PI / 2 - 0.1} 
+            minDistance={30} 
+            maxDistance={200}
+            target={[0, 20, 0]}
+          />
+          <Environment preset="city" />
+        </Canvas>
+      </div>
+      
+      <div className="mt-4 flex gap-4 text-[10px] uppercase tracking-widest text-[var(--color-fog)] pointer-events-none">
+        <p>Click & Drag to Rotate</p>
+        <p>Scroll to Zoom</p>
       </div>
 
       {selectedSeat && !showCheckout && (

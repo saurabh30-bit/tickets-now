@@ -64,30 +64,4 @@
   }
 }
 
-/* 3D Isometric Utilities */
-.stadium-container {
-  perspective: 2000px;
-}
 
-.isometric-view {
-  transform-style: preserve-3d;
-  background-color: var(--color-warm-linen);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--color-cloud-cover);
-  transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.15s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
-.seat-3d {
-  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.2s;
-  transform-style: preserve-3d;
-}
-
-.seat-3d:hover {
-  transform: translateZ(10px) scale(1.1);
-  box-shadow: -5px 5px 10px rgba(0,0,0,0.1);
-}
-
-.stadium-stage {
-  transform: translateZ(5px);
-  box-shadow: -2px 2px 5px rgba(0,0,0,0.05);
-}
