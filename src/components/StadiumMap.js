@@ -29,15 +29,14 @@ const CameraController = () => {
     const offset = scroll.offset; // 0 to 1
     
     // Cinematic camera path
-    // Starts high up, looking straight down.
-    // Slowly sweeps around 180 degrees and lowers to ground level to view the stadium
-    
-    const radius = 120 - (offset * 40); // 120 -> 80
+    // The seats reach a max radius of ~105.
+    // We must ensure the camera stops at a radius > 105 so all seats are accessible and in front of the camera.
+    const radius = 220 - (offset * 80); // 220 -> 140
     const angle = offset * Math.PI * 1.2; // 0 -> ~216 degrees
     
     const x = Math.sin(angle) * radius;
     const z = Math.cos(angle) * radius;
-    const y = 100 - (offset * 80); // 100 -> 20
+    const y = 150 - (offset * 110); // 150 -> 40
     
     // Smooth camera movement using lerp
     vec.set(x, y, z);
@@ -180,12 +179,6 @@ export default function StadiumMap() {
   }, []);
 
   const handleSeatClick = useCallback(async (id) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      alert("Please log in first to select a seat.");
-      return;
-    }
-
     const seat = seats[id - 1];
     if (seat && seat.status === 'AVAILABLE') {
       setSelectedSeat(id);
@@ -194,7 +187,10 @@ export default function StadiumMap() {
 
   const handleProceedToCheckout = async () => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) {
+      alert("Please Authenticate using the button in the top right to acquire a block.");
+      return;
+    }
 
     const { data, error } = await supabase
       .from('seats')
