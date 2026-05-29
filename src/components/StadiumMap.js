@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Environment, ContactShadows, ScrollControls, Scroll, useScroll } from '@react-three/drei';
+import { Environment, ContactShadows, ScrollControls, Scroll, useScroll, Grid } from '@react-three/drei';
+import { EffectComposer, Bloom, Vignette, Noise } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import { supabase } from '@/lib/supabase';
 import SeatModal from './SeatModal';
@@ -127,11 +128,14 @@ const InstancedStadium = ({ seats, onSeatClick }) => {
       onPointerMove={handlePointerMove}
       onPointerOut={handlePointerOut}
       onClick={handleClick}
+      castShadow
+      receiveShadow
     >
-      <boxGeometry args={[0.8, 0.8, 0.8]} />
+      <boxGeometry args={[0.7, 1.8, 0.7]} />
       <meshStandardMaterial 
-        roughness={0.2}
-        metalness={0.1}
+        roughness={0.15}
+        metalness={0.6}
+        envMapIntensity={1.5}
         toneMapped={false} 
       />
     </instancedMesh>
@@ -236,10 +240,21 @@ export default function StadiumMap() {
 
   return (
     <>
-      <Canvas camera={{ position: [0, 100, 100], fov: 45 }}>
+      <Canvas shadows camera={{ position: [0, 100, 100], fov: 45 }}>
         <color attach="background" args={['#ffffff']} />
-        <ambientLight intensity={0.5} />
-        <directionalLight position={[50, 100, -50]} intensity={1.5} castShadow />
+        
+        {/* Improved Lighting */}
+        <ambientLight intensity={0.6} />
+        <directionalLight 
+          position={[50, 100, -50]} 
+          intensity={2} 
+          castShadow 
+          shadow-mapSize={[2048, 2048]} 
+          shadow-camera-left={-50} 
+          shadow-camera-right={50} 
+          shadow-camera-top={50} 
+          shadow-camera-bottom={-50} 
+        />
         
         <ScrollControls pages={3.5} damping={0.25}>
           
@@ -247,11 +262,40 @@ export default function StadiumMap() {
           
           <InstancedStadium seats={seats} onSeatClick={handleSeatClick} />
           
-          <mesh position={[0, -2, 0]} receiveShadow>
-            <cylinderGeometry args={[15, 15, 2, 32]} />
-            <meshStandardMaterial color="#ecebe7" roughness={0.1} />
+          {/* Architectural Ground / Grid */}
+          <Grid 
+            position={[0, -1, 0]} 
+            args={[200, 200]} 
+            cellSize={2} 
+            cellThickness={1} 
+            cellColor="#cccccc" 
+            sectionSize={10} 
+            sectionThickness={1.5} 
+            sectionColor="#999999" 
+            fadeDistance={100} 
+            fadeStrength={1.5} 
+          />
+          
+          {/* The Central Stage */}
+          <mesh position={[0, -0.9, 0]} receiveShadow>
+            <cylinderGeometry args={[18, 18, 0.5, 64]} />
+            <meshStandardMaterial color="#222222" roughness={0.4} metalness={0.8} />
           </mesh>
-          <ContactShadows position={[0, -3, 0]} opacity={0.4} scale={150} blur={2} far={100} />
+          {/* Glowing Stage Ring */}
+          <mesh position={[0, -0.5, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <ringGeometry args={[16, 17, 64]} />
+            <meshBasicMaterial color={[2, 2, 2]} toneMapped={false} />
+          </mesh>
+          
+          <ContactShadows position={[0, -1.05, 0]} opacity={0.5} scale={150} blur={2.5} far={100} />
+          
+          {/* Post Processing Effects */}
+          <EffectComposer disableNormalPass>
+            <Bloom luminanceThreshold={1} mipmapBlur intensity={0.8} />
+            <Noise opacity={0.03} />
+            <Vignette eskil={false} offset={0.1} darkness={0.5} />
+          </EffectComposer>
+
           
           {/* CRITICAL: pointerEvents: 'none' allows the 3D canvas underneath to be clickable! */}
           <Scroll html style={{ width: '100vw', pointerEvents: 'none' }}>
