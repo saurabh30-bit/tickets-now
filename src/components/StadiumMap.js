@@ -240,7 +240,7 @@ export default function StadiumMap() {
 
   return (
     <>
-      <Canvas shadows camera={{ position: [0, 100, 100], fov: 45 }}>
+      <Canvas shadows dpr={[1, 2]} gl={{ antialias: true, powerPreference: "high-performance" }} camera={{ position: [0, 100, 100], fov: 45 }}>
         <color attach="background" args={['#ffffff']} />
         
         {/* Improved Lighting */}
@@ -290,7 +290,7 @@ export default function StadiumMap() {
           <ContactShadows position={[0, -1.05, 0]} opacity={0.5} scale={150} blur={2.5} far={100} />
           
           {/* Post Processing Effects */}
-          <EffectComposer disableNormalPass>
+          <EffectComposer disableNormalPass multisampling={8}>
             <Bloom luminanceThreshold={1} mipmapBlur intensity={0.8} />
             <Noise opacity={0.03} />
             <Vignette eskil={false} offset={0.1} darkness={0.5} />
