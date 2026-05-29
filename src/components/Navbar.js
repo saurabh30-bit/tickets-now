@@ -28,8 +28,16 @@ export default function Navbar() {
   }, []);
 
   const handleLogin = async () => {
-    const { error } = await supabase.auth.signInAnonymously();
-    if (error) alert("Error logging in.");
+    // Generate a random guest email to bypass the need for Anonymous Auth to be enabled in the Supabase Dashboard
+    const guestEmail = `guest_${Math.random().toString(36).substring(2, 10)}@ticketsnow.com`;
+    const { error } = await supabase.auth.signUp({
+      email: guestEmail,
+      password: 'guestpassword12345'
+    });
+    
+    if (error) {
+      alert("Error Authenticating: " + error.message);
+    }
   };
 
   const handleLogout = async () => {
