@@ -23,7 +23,9 @@ const tempColor = new THREE.Color();
 
 const InstancedStadium = ({ seats, onSeatClick }) => {
   const meshRef = useRef();
-  const [hovered, setHovered] = useState(null);
+  
+  // Use a ref for hover to avoid React state render loops on pointer move
+  const hoveredRef = useRef(null);
 
   // Compute Layout once
   const positions = useMemo(() => {
@@ -61,11 +63,13 @@ const InstancedStadium = ({ seats, onSeatClick }) => {
   useFrame(() => {
     if (!meshRef.current || seats.length === 0) return;
 
-    // Update colors on every frame in case of hover or state change
+    // Update colors on every frame based on ref and props
+    const hoveredIndex = hoveredRef.current;
+    
     for (let i = 0; i < SEAT_COUNT; i++) {
       const seatState = seats[i]?.status || 'AVAILABLE';
       
-      if (i === hovered && seatState === 'AVAILABLE') {
+      if (i === hoveredIndex && seatState === 'AVAILABLE') {
         tempColor.copy(COLOR_HOVER);
       } else if (seatState === 'BOOKED') {
         tempColor.copy(COLOR_BOOKED);
@@ -83,12 +87,13 @@ const InstancedStadium = ({ seats, onSeatClick }) => {
   const handlePointerMove = (e) => {
     e.stopPropagation();
     if (e.instanceId !== undefined) {
-      setHovered(e.instanceId);
+      // Direct ref mutation prevents React from re-rendering the component 60 times a second
+      hoveredRef.current = e.instanceId;
     }
   };
 
   const handlePointerOut = () => {
-    setHovered(null);
+    hoveredRef.current = null;
   };
 
   const handleClick = (e) => {
@@ -126,14 +131,23 @@ export default function StadiumMap() {
     async function fetchSeats() {
       const { data, error } = await supabase
         .from('seats')
-        .select('id, status')
-        .order('id', { ascending: true });
+        .select('id, status');
 
-      if (!error && data && data.length > 0) {
-        setSeats(data);
-      } else {
-        setSeats(Array.from({ length: 5000 }, (_, i) => ({ id: i + 1, status: 'AVAILABLE' })));
+      // Always create a full 5000 array so index `i` matches id `i+1`
+      const fullSeats = Array.from({ length: SEAT_COUNT }, (_, i) => ({
+        id: i + 1,
+        status: 'AVAILABLE'
+      }));
+
+      if (!error && data) {
+        data.forEach(dbSeat => {
+          if (dbSeat.id >= 1 && dbSeat.id <= SEAT_COUNT) {
+            fullSeats[dbSeat.id - 1].status = dbSeat.status;
+          }
+        });
       }
+      
+      setSeats(fullSeats);
       setLoading(false);
     }
     fetchSeats();
@@ -147,9 +161,9 @@ export default function StadiumMap() {
       }, (payload) => {
         setSeats((prevSeats) => {
           const newSeats = [...prevSeats];
-          const seatIndex = newSeats.findIndex(s => s.id === payload.new.id);
-          if (seatIndex !== -1) {
-            newSeats[seatIndex] = { ...newSeats[seatIndex], status: payload.new.status };
+          const dbId = payload.new.id;
+          if (dbId >= 1 && dbId <= SEAT_COUNT) {
+            newSeats[dbId - 1] = { ...newSeats[dbId - 1], status: payload.new.status };
           }
           return newSeats;
         });
@@ -168,7 +182,7 @@ export default function StadiumMap() {
       return;
     }
 
-    const seat = seats.find(s => s.id === id);
+    const seat = seats[id - 1]; // Direct array access since we mapped it exactly
     if (seat && seat.status === 'AVAILABLE') {
       setSelectedSeat(id);
     }
