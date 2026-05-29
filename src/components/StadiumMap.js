@@ -256,27 +256,18 @@ export default function StadiumMap() {
           {/* CRITICAL: pointerEvents: 'none' allows the 3D canvas underneath to be clickable! */}
           <Scroll html style={{ width: '100vw', pointerEvents: 'none' }}>
             
-            {/* Top Section - Hero Redesign */}
-            <div className="w-screen h-screen relative">
-              <div className="absolute top-[20%] left-[8%] md:left-[12%] mix-blend-difference text-white pointer-events-none">
-                <p className="text-[12px] md:text-[16px] uppercase tracking-[0.4em] font-bold mb-4 opacity-90">
-                  Interactive Exhibition
-                </p>
-                <h1 className="text-[15vw] md:text-[12vw] font-[family-name:var(--font-letterform)] leading-[0.8] tracking-tighter">
-                  TICKETS<br/>NOW.
-                </h1>
-              </div>
-              
-              <div className="absolute bottom-[15%] right-[8%] md:right-[15%] max-w-sm text-right mix-blend-difference text-white pointer-events-none">
-                <p className="text-[14px] md:text-[16px] font-light opacity-80 leading-relaxed mb-8">
-                  A high-concurrency study in physical space. Scroll down to descend into the architecture and secure your block on the grid.
-                </p>
-                <div className="flex justify-end items-center gap-4">
-                  <div className="w-12 h-[1px] bg-white opacity-50"></div>
-                  <p className="text-[11px] tracking-[0.4em] uppercase font-bold animate-pulse">
-                    Scroll
-                  </p>
+            {/* Top Section - Hero */}
+            <div className="w-screen h-screen flex flex-col items-center justify-center">
+              <div className="text-center">
+                <div className="inline-block mb-10 px-4 py-1 border border-[var(--color-steel-gaze)] rounded-[3.4px] bg-white/50 backdrop-blur-sm">
+                  <span className="text-[var(--color-midnight-ink)] text-[10px] uppercase tracking-widest font-bold">Interactive Exhibition</span>
                 </div>
+                <h1 className="text-[60px] md:text-[100px] font-[family-name:var(--font-letterform)] leading-[1.0] mb-8 bg-white/40 backdrop-blur-md px-8 py-4 rounded-2xl shadow-xl border border-white/20">
+                  The Gallery<br/>Collection.
+                </h1>
+                <p className="text-[14px] tracking-[0.3em] uppercase font-bold text-[var(--color-midnight-ink)] animate-bounce mt-12">
+                  ↓ Scroll down to enter ↓
+                </p>
               </div>
             </div>
             
