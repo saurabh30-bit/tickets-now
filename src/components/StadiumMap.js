@@ -241,7 +241,7 @@ export default function StadiumMap() {
         <ambientLight intensity={0.5} />
         <directionalLight position={[50, 100, -50]} intensity={1.5} castShadow />
         
-        <ScrollControls pages={3} damping={0.25}>
+        <ScrollControls pages={3.5} damping={0.25}>
           
           <CameraController />
           
@@ -253,51 +253,69 @@ export default function StadiumMap() {
           </mesh>
           <ContactShadows position={[0, -3, 0]} opacity={0.4} scale={150} blur={2} far={100} />
           
-          <Scroll html style={{ width: '100vw' }}>
-            <div className="w-screen h-screen flex flex-col items-center justify-center pointer-events-none">
+          {/* CRITICAL: pointerEvents: 'none' allows the 3D canvas underneath to be clickable! */}
+          <Scroll html style={{ width: '100vw', pointerEvents: 'none' }}>
+            
+            {/* Top Section - Hero */}
+            <div className="w-screen h-screen flex flex-col items-center justify-center">
               <div className="text-center">
                 <div className="inline-block mb-10 px-4 py-1 border border-[var(--color-steel-gaze)] rounded-[3.4px] bg-white/50 backdrop-blur-sm">
                   <span className="text-[var(--color-midnight-ink)] text-[10px] uppercase tracking-widest font-bold">Interactive Exhibition</span>
                 </div>
-                <h1 className="text-[60px] md:text-[90px] font-[family-name:var(--font-letterform)] leading-[1.0] mb-8 bg-white/30 backdrop-blur-sm p-4 rounded-xl">
-                  The Gallery Collection.
+                <h1 className="text-[60px] md:text-[100px] font-[family-name:var(--font-letterform)] leading-[1.0] mb-8 bg-white/40 backdrop-blur-md px-8 py-4 rounded-2xl shadow-xl border border-white/20">
+                  The Gallery<br/>Collection.
                 </h1>
-                <p className="text-[17px] tracking-widest uppercase font-bold text-[var(--color-midnight-ink)]">
-                  Scroll to enter
+                <p className="text-[14px] tracking-[0.3em] uppercase font-bold text-[var(--color-midnight-ink)] animate-bounce mt-12">
+                  ↓ Scroll down to enter ↓
                 </p>
               </div>
             </div>
             
-            <div className="w-screen h-screen flex items-center justify-start pl-[10vw] pointer-events-none">
-              <div className="max-w-xl bg-white/60 backdrop-blur-md p-10 rounded-2xl border border-[var(--color-cloud-cover)] shadow-2xl">
-                <h2 className="text-[40px] font-[family-name:var(--font-letterform)] leading-tight mb-4 text-[var(--color-midnight-ink)]">
+            {/* Middle Section - Story */}
+            <div className="w-screen h-[100vh] flex items-center justify-start pl-[10vw]">
+              <div className="max-w-2xl bg-white/70 backdrop-blur-xl p-12 rounded-3xl border border-[var(--color-cloud-cover)] shadow-2xl">
+                <h2 className="text-[48px] font-[family-name:var(--font-letterform)] leading-tight mb-6 text-[var(--color-midnight-ink)]">
                   A brutalist study in<br/>high-concurrency ticketing.
                 </h2>
-                <p className="text-[var(--color-carbon-text)] font-light leading-relaxed">
-                  Every 3D block represents a live connection to the database. As users around the world claim their space, the structure physically alters in real-time.
+                <p className="text-[18px] text-[var(--color-carbon-text)] font-light leading-relaxed">
+                  Every 3D block below represents a live WebSocket connection to our global database. As users around the world claim their space, the architectural structure physically alters in real-time.
                 </p>
               </div>
             </div>
             
-            <div className="w-screen h-screen flex flex-col items-center justify-end pb-20 pointer-events-none">
-              <div className="bg-[var(--color-midnight-ink)] text-[var(--color-canvas-white)] px-8 py-4 rounded-full flex gap-8 items-center shadow-2xl pointer-events-auto">
+            {/* Bottom Section - Ticketing Interface & Footer */}
+            <div className="w-screen h-[150vh] flex flex-col items-center justify-end pb-12">
+              <div className="bg-[var(--color-midnight-ink)] text-[var(--color-canvas-white)] px-10 py-5 rounded-full flex gap-10 items-center shadow-2xl pointer-events-auto border border-[var(--color-carbon-text)] mb-8 transition-transform hover:scale-105">
                 <div className="flex items-center gap-3">
-                  <div className="w-4 h-4 bg-[var(--color-cloud-cover)] rounded-sm"></div> 
-                  <span className="text-[12px] uppercase tracking-widest font-bold">Available</span>
+                  <div className="w-5 h-5 bg-[var(--color-cloud-cover)] rounded-sm"></div> 
+                  <span className="text-[13px] uppercase tracking-[0.2em] font-bold">Available</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="w-4 h-4 bg-[var(--color-fog)] rounded-sm"></div> 
-                  <span className="text-[12px] uppercase tracking-widest font-bold">Locked</span>
+                  <div className="w-5 h-5 bg-[var(--color-fog)] rounded-sm"></div> 
+                  <span className="text-[13px] uppercase tracking-[0.2em] font-bold">Locked</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="w-4 h-4 bg-black rounded-sm border border-gray-600"></div> 
-                  <span className="text-[12px] uppercase tracking-widest font-bold">Booked</span>
+                  <div className="w-5 h-5 bg-black rounded-sm border border-gray-600"></div> 
+                  <span className="text-[13px] uppercase tracking-[0.2em] font-bold">Booked</span>
                 </div>
               </div>
-              <p className="mt-6 text-[10px] uppercase tracking-widest text-[var(--color-midnight-ink)] font-bold">
-                Hover over the stadium blocks to select your seat
-              </p>
+              
+              <div className="bg-white/80 backdrop-blur-md px-8 py-4 rounded-xl border border-gray-200 shadow-lg pointer-events-auto mb-20 text-center">
+                <p className="text-[12px] uppercase tracking-[0.2em] text-[var(--color-midnight-ink)] font-bold mb-1">
+                  1. Zoom & Pan to find your seat
+                </p>
+                <p className="text-[12px] uppercase tracking-[0.2em] text-[var(--color-midnight-ink)] font-bold">
+                  2. Click a White Block to reserve it
+                </p>
+              </div>
+
+              {/* Improved Bottom Footer Area inside the scroll */}
+              <div className="w-full bg-[var(--color-canvas-white)]/90 backdrop-blur-lg border-t border-[var(--color-cloud-cover)] py-8 flex flex-col items-center justify-center pointer-events-auto mt-auto">
+                <h3 className="font-[family-name:var(--font-letterform)] text-[24px] text-[var(--color-midnight-ink)] mb-2">TicketsNow Architecture</h3>
+                <p className="text-[12px] uppercase tracking-[0.2em] text-[var(--color-fog)]">Powered by Next.js, Supabase & WebGL</p>
+              </div>
             </div>
+            
           </Scroll>
           
         </ScrollControls>
@@ -306,14 +324,14 @@ export default function StadiumMap() {
 
       {/* Floating Modals above the canvas z-index */}
       {selectedSeat && !showCheckout && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none">
+        <div className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none bg-black/20 backdrop-blur-sm">
           <div className="pointer-events-auto">
             <SeatModal seatId={selectedSeat} onCheckout={handleProceedToCheckout} onCancel={handleCancelReservation} />
           </div>
         </div>
       )}
       {showCheckout && selectedSeat && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none">
+        <div className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none bg-black/20 backdrop-blur-sm">
           <div className="pointer-events-auto">
             <CheckoutForm seatId={selectedSeat} onSuccess={handlePaymentSuccess} onCancel={handleCancelReservation} />
           </div>
